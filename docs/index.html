@@ -5,10 +5,10 @@
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <title>BTC Paper Desk</title>
   <meta name="description" content="Bitcoin paper trading szimuláció – öt képzeletbeli portfólió élő követése. Valódi pénz nincs.">
-  <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Ccircle cx='16' cy='16' r='15' fill='%23f7931a'/%3E%3Cpath d='M12 9v14M15 9v2M15 21v2M12 11h6a3 3 0 0 1 0 6h-6m0 0h7a3 3 0 0 1 0 6h-7' stroke='%23111' stroke-width='2.2' fill='none' stroke-linecap='round'/%3E%3C/svg%3E">
+  <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Crect width='32' height='32' fill='%23111'/%3E%3Cpath d='M12 9v14M15 9v2M15 21v2M12 11h6a3 3 0 0 1 0 6h-6m0 0h7a3 3 0 0 1 0 6h-7' stroke='%23ff5a3c' stroke-width='2.2' fill='none' stroke-linecap='round'/%3E%3C/svg%3E">
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+  <link href="https://fonts.googleapis.com/css2?family=Archivo:wdth,wght@62..125,300..800&family=Inter:wght@400;500;600&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
   <link rel="stylesheet" href="styles.css">
   <script>
     try { const t = localStorage.getItem("theme"); if (t) document.documentElement.dataset.theme = t; } catch (e) {}
@@ -17,21 +17,19 @@
 <body>
   <a class="skip" href="#main">Ugrás a tartalomra</a>
 
+  <!-- függőleges oldalfeliratok (a referencia "CONSUME RESPONSIBLY" mintájára) -->
+  <div class="rail rail--left" aria-hidden="true">Nincs valódi pénz <span class="rail__dot">●</span> Paper trading</div>
+  <div class="rail rail--right" aria-hidden="true">Coinbase · Kraken <span class="rail__dot">●</span> Europe/Budapest</div>
+
   <header class="topbar">
     <div class="wrap topbar__inner">
-      <div class="brand">
-        <svg class="brand__mark" viewBox="0 0 32 32" aria-hidden="true">
-          <circle cx="16" cy="16" r="15"/>
-          <path d="M12 9v14M15 9v2M15 21v2M12 11h6a3 3 0 0 1 0 6h-6m0 0h7a3 3 0 0 1 0 6h-7"/>
-        </svg>
-        <div>
-          <div class="brand__name">BTC Paper Desk</div>
-          <div class="brand__sub">Bitcoin paper trading · szimuláció, valódi pénz nélkül</div>
-        </div>
-      </div>
+      <a class="brand" href="#main" aria-label="BTC Paper Desk – az oldal teteje">
+        <span class="brand__mark" aria-hidden="true">₿</span>
+        <span class="brand__name">BTC Paper Desk</span>
+      </a>
       <div class="topbar__meta">
-        <span class="badge" id="source-badge">…</span>
-        <span class="meta" id="last-run" aria-live="polite">Betöltés…</span>
+        <span class="mono meta" id="last-run" aria-live="polite">Betöltés…</span>
+        <span class="pill" id="source-badge">…</span>
         <button class="icon-btn" id="refresh" type="button" aria-label="Frissítés">
           <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M20 11a8 8 0 1 0-2.3 5.7M20 4v7h-7"/></svg>
         </button>
@@ -47,144 +45,166 @@
     <div class="notice" id="notice" hidden></div>
     <div class="notice notice--error" id="load-error" role="alert" hidden></div>
 
-    <!-- 1. Ár és rendszerállapot -->
-    <section class="grid hero" aria-label="Áttekintés">
-      <article class="card price">
-        <div class="card__head">
-          <h2 class="eyebrow">BTC / USD</h2>
-          <span class="meta">Coinbase · utolsó futás</span>
-        </div>
-        <div class="price__row">
-          <div class="price__value num" id="price">–</div>
+    <!-- HERO -->
+    <section class="hero" aria-label="BTC ár és áttekintés">
+      <p class="hero__kicker mono">Bitcoin paper trading <span class="x">×</span> öt képzeletbeli portfólió</p>
+      <div class="hero__grid">
+        <div class="hero__text">
+          <h1 class="display">
+            <span class="display__line">BTC/USD</span>
+            <span class="display__line display__line--outline num" id="price">–</span>
+          </h1>
           <div class="chips">
             <span class="chip" id="chg24">24 óra –</span>
             <span class="chip" id="chg7">7 nap –</span>
           </div>
         </div>
-        <div class="spark" id="spark" role="img" aria-label="BTC ár alakulása"></div>
-      </article>
-
-      <article class="card health">
-        <div class="card__head">
-          <h2 class="eyebrow">Rendszerállapot</h2>
-          <span class="status" id="status-pill">–</span>
+        <div class="hero__object" id="coin-stage" aria-hidden="true">
+          <div class="glow"></div>
+          <div class="coin">
+            <div class="coin__edge"></div>
+            <div class="coin__face"><span>₿</span></div>
+          </div>
+          <div class="index-tag mono"><span>#00</span>szimuláció</div>
         </div>
-        <p class="health__issue" id="status-issue"></p>
-        <dl class="kpis" id="kpis"></dl>
-      </article>
+      </div>
+      <div class="spark" id="spark" role="img" aria-label="BTC ár alakulása"></div>
+      <ul class="facts mono" aria-label="Alapbeállítások">
+        <li><span>Stratégiák</span>P1 · P2 · P3</li>
+        <li><span>Mércék</span>B1 buy &amp; hold · B2 heti DCA</li>
+        <li><span>Kezdőtőke</span>200 $ / portfólió</li>
+        <li><span>Költség</span>0,4% díj · 0,05% csúszás</li>
+      </ul>
     </section>
 
-    <!-- 2. Rangsor -->
+    <!-- 01 ÁLLAPOT -->
+    <section class="section" aria-labelledby="h-health">
+      <div class="section__head">
+        <span class="index-tag mono"><span>#01</span>állapot</span>
+        <h2 id="h-health" class="section__title">Rendszer</h2>
+        <span class="status" id="status-pill">–</span>
+      </div>
+      <p class="lede" id="status-issue"></p>
+      <dl class="kpis" id="kpis"></dl>
+    </section>
+
+    <!-- 02 RANGSOR -->
     <section class="section" aria-labelledby="h-rank">
       <div class="section__head">
-        <h2 id="h-rank">Rangsor</h2>
-        <p class="meta">5 független portfólió, mindegyik 200 $-ral indult · díjak után</p>
+        <span class="index-tag mono"><span>#02</span>rangsor</span>
+        <h2 id="h-rank" class="section__title">Rangsor</h2>
+        <p class="meta mono">Díjak után · mindegyik 200 $-ral indult</p>
       </div>
-      <div class="card card--flush">
-        <div class="table-scroll">
-          <table class="table" id="rank-table">
-            <thead>
-              <tr>
-                <th scope="col">#</th>
-                <th scope="col">Portfólió</th>
-                <th scope="col" class="r">Tőke</th>
-                <th scope="col" class="r">Hozam</th>
-                <th scope="col" class="r">Max visszaesés</th>
-                <th scope="col" class="r">Kötések</th>
-                <th scope="col" class="r">Win rate</th>
-                <th scope="col" class="r">Profit factor</th>
-                <th scope="col">Állapot</th>
-              </tr>
-            </thead>
-            <tbody></tbody>
-          </table>
-        </div>
+      <div class="table-scroll">
+        <table class="table" id="rank-table">
+          <thead>
+            <tr>
+              <th scope="col">#</th>
+              <th scope="col">Portfólió</th>
+              <th scope="col" class="r">Tőke</th>
+              <th scope="col" class="r">Hozam</th>
+              <th scope="col" class="r">Max visszaesés</th>
+              <th scope="col" class="r">Kötések</th>
+              <th scope="col" class="r">Win rate</th>
+              <th scope="col" class="r">Profit factor</th>
+              <th scope="col">Állapot</th>
+            </tr>
+          </thead>
+          <tbody></tbody>
+        </table>
       </div>
     </section>
 
-    <!-- 3. Tőkegörbék -->
+    <!-- 03 TŐKEGÖRBÉK -->
     <section class="section" aria-labelledby="h-equity">
       <div class="section__head">
-        <h2 id="h-equity">Tőkegörbék</h2>
-        <div class="controls">
-          <div class="segmented" role="group" aria-label="Időtáv" id="range">
-            <button type="button" data-range="7" aria-pressed="false">7 nap</button>
-            <button type="button" data-range="30" aria-pressed="false">30 nap</button>
-            <button type="button" data-range="0" aria-pressed="true">Összes</button>
-          </div>
+        <span class="index-tag mono"><span>#03</span>tőke</span>
+        <h2 id="h-equity" class="section__title">Tőkegörbék</h2>
+        <div class="segmented" role="group" aria-label="Időtáv" id="range">
+          <button type="button" data-range="7" aria-pressed="false">7 nap</button>
+          <button type="button" data-range="30" aria-pressed="false">30 nap</button>
+          <button type="button" data-range="0" aria-pressed="true">Összes</button>
         </div>
       </div>
-      <div class="card">
-        <div class="legend" id="legend" role="group" aria-label="Portfóliók ki- és bekapcsolása"></div>
-        <div class="chart" id="equity-chart" tabindex="0" role="img"
-             aria-label="Hozam a kezdőtőkéhez képest, portfóliónként. A nyilakkal lépkedhetsz az időben."></div>
-      </div>
+      <div class="legend" id="legend" role="group" aria-label="Portfóliók ki- és bekapcsolása"></div>
+      <div class="chart" id="equity-chart" tabindex="0" role="img"
+           aria-label="Hozam a kezdőtőkéhez képest, portfóliónként. A nyilakkal lépkedhetsz az időben."></div>
     </section>
 
-    <!-- 4. Stratégiák -->
+    <!-- 04 STRATÉGIÁK -->
     <section class="section" aria-labelledby="h-strat">
       <div class="section__head">
-        <h2 id="h-strat">Mit csinál most az egyes stratégia?</h2>
-        <p class="meta">Nyitott pozíció, vagy a belépési feltételek az utolsó lezárt gyertyán</p>
+        <span class="index-tag mono"><span>#04</span>stratégiák</span>
+        <h2 id="h-strat" class="section__title">Mire vár most?</h2>
+        <p class="meta mono">Nyitott pozíció, vagy a belépési feltételek az utolsó lezárt gyertyán</p>
       </div>
-      <div class="grid strategies" id="strategies"></div>
+      <div class="strategies" id="strategies"></div>
     </section>
 
-    <!-- 5. Kötések -->
+    <!-- 05 KÖTÉSEK -->
     <section class="section" aria-labelledby="h-trades">
       <div class="section__head">
-        <h2 id="h-trades">Kötések</h2>
+        <span class="index-tag mono"><span>#05</span>napló</span>
+        <h2 id="h-trades" class="section__title">Kötések</h2>
         <div class="segmented" role="group" aria-label="Szűrés portfólióra" id="trade-filter"></div>
       </div>
-      <div class="card card--flush">
-        <div class="table-scroll">
-          <table class="table" id="trade-table">
-            <thead>
-              <tr>
-                <th scope="col">Idő (Budapest)</th>
-                <th scope="col">Portfólió</th>
-                <th scope="col">Irány</th>
-                <th scope="col">Ok</th>
-                <th scope="col" class="r">BTC</th>
-                <th scope="col" class="r">Ár</th>
-                <th scope="col" class="r">Érték</th>
-                <th scope="col" class="r">Díj</th>
-                <th scope="col" class="r">Eredmény</th>
-              </tr>
-            </thead>
-            <tbody></tbody>
-          </table>
-        </div>
-        <div class="table-foot">
-          <span class="meta" id="trade-count"></span>
-          <button type="button" class="btn" id="trade-more">Több mutatása</button>
-        </div>
+      <div class="table-scroll">
+        <table class="table" id="trade-table">
+          <thead>
+            <tr>
+              <th scope="col">Idő (Budapest)</th>
+              <th scope="col">Portfólió</th>
+              <th scope="col">Irány</th>
+              <th scope="col">Ok</th>
+              <th scope="col" class="r">BTC</th>
+              <th scope="col" class="r">Ár</th>
+              <th scope="col" class="r">Érték</th>
+              <th scope="col" class="r">Díj</th>
+              <th scope="col" class="r">Eredmény</th>
+            </tr>
+          </thead>
+          <tbody></tbody>
+        </table>
+      </div>
+      <div class="table-foot">
+        <span class="meta mono" id="trade-count"></span>
+        <button type="button" class="btn" id="trade-more">Több mutatása</button>
       </div>
     </section>
 
-    <!-- 6. Futások és riasztások -->
-    <section class="section grid split" aria-label="Futások és riasztások">
+    <!-- 06 FUTÁSOK / RIASZTÁSOK -->
+    <section class="section split" aria-label="Futások és riasztások">
       <div>
-        <div class="section__head"><h2>Futások</h2><p class="meta" id="runs-meta"></p></div>
-        <div class="card">
-          <div class="runs" id="runs" role="list" aria-label="Utolsó futások állapota"></div>
-          <div class="runs__legend meta">
-            <span><i class="dot dot--ok"></i>rendben</span>
-            <span><i class="dot dot--bad"></i>nem volt döntés (adat-hiba)</span>
-          </div>
-          <p class="meta runs__detail" id="run-detail">Vidd az egeret egy futásra a részletekért.</p>
+        <div class="section__head">
+          <span class="index-tag mono"><span>#06</span>futások</span>
+          <h2 class="section__title section__title--sm">Futások</h2>
+          <p class="meta mono" id="runs-meta"></p>
         </div>
+        <div class="runs" id="runs" role="list" aria-label="Utolsó futások állapota"></div>
+        <div class="runs__legend meta mono">
+          <span><i class="dot dot--ok"></i>rendben</span>
+          <span><i class="dot dot--bad"></i>nem volt döntés (adat-hiba)</span>
+        </div>
+        <p class="meta runs__detail" id="run-detail">Vidd az egeret egy futásra a részletekért.</p>
       </div>
       <div>
-        <div class="section__head"><h2>Riasztások</h2></div>
-        <div class="card card--flush"><ul class="alerts" id="alerts"></ul></div>
+        <div class="section__head">
+          <span class="index-tag mono"><span>#07</span>riasztás</span>
+          <h2 class="section__title section__title--sm">Riasztások</h2>
+        </div>
+        <ul class="alerts" id="alerts"></ul>
       </div>
     </section>
   </main>
 
-  <footer class="wrap footer">
-    <p>Szimuláció: valódi pénz, tőzsdei számla és megbízás nincs. Nem befektetési tanács.</p>
-    <p class="meta"><span id="config-hash"></span> · <a href="https://github.com/petricorn/btc-paper-trading">Forráskód és riportok</a></p>
+  <footer class="footer">
+    <div class="wrap">
+      <p class="footer__big" aria-hidden="true">Kereskedj felelősen</p>
+      <div class="footer__row">
+        <p>Szimuláció: valódi pénz, tőzsdei számla és megbízás nincs. Nem befektetési tanács.</p>
+        <p class="meta mono"><span id="config-hash"></span> · <a href="https://github.com/petricorn/btc-paper-trading">Forráskód és riportok</a></p>
+      </div>
+    </div>
   </footer>
 
   <div class="tooltip" id="tooltip" role="status" hidden></div>

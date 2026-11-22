@@ -78,7 +78,7 @@ function render() {
   const badge = $("#source-badge");
   const live = d.source === "live" && ui.source === "live";
   badge.textContent = live ? "ÉLŐ" : "DEMÓ";
-  badge.className = `badge ${live ? "badge--live" : "badge--demo"}`;
+  badge.className = `pill ${live ? "pill--live" : "pill--demo"}`;
   const ago = Math.max(0, Math.round(Date.now() / 1000 - d.generated));
   $("#last-run").textContent = live
     ? `Utolsó futás: ${when(d.generated)} (${ago < 3600 ? Math.round(ago / 60) + " perce" : Math.round(ago / 3600) + " órája"})`
@@ -248,7 +248,7 @@ function drawEquity() {
       <line class="zero" x1="${m.l}" x2="${W - m.r}" y1="${Y(0)}" y2="${Y(0)}"/>
       ${lines}
       <g id="xh" visibility="hidden"><line class="crosshair" y1="${m.t}" y2="${H - m.b}"/>${series.map((s) =>
-        `<circle r="4.5" fill="${COLOR[s.key]}" stroke="var(--surface)" stroke-width="2" data-k="${s.key}"/>`).join("")}</g>
+        `<circle r="4.5" fill="${COLOR[s.key]}" stroke="var(--bg)" stroke-width="2" data-k="${s.key}"/>`).join("")}</g>
       <rect class="hit" x="${m.l}" y="${m.t}" width="${W - m.l - m.r}" height="${H - m.t - m.b}"/>
     </svg>`;
   const base = series.reduce((a, b) => (b.points.length > a.points.length ? b : a)).points;
@@ -307,10 +307,10 @@ function drawSpark(points) {
   const line = points.map((p, i) => `${i ? "L" : "M"}${X(p[0]).toFixed(1)},${Y(p[1]).toFixed(1)}`).join("");
   el.innerHTML = `<svg viewBox="0 0 ${W} ${H}" aria-hidden="true">
     <defs><linearGradient id="sg" x1="0" x2="0" y1="0" y2="1">
-      <stop offset="0" stop-color="var(--accent)" stop-opacity=".22"/><stop offset="1" stop-color="var(--accent)" stop-opacity="0"/></linearGradient></defs>
+      <stop offset="0" stop-color="var(--accent)" stop-opacity=".28"/><stop offset="1" stop-color="var(--accent)" stop-opacity="0"/></linearGradient></defs>
     <path d="${line}L${W},${H}L0,${H}Z" fill="url(#sg)"/>
-    <path d="${line}" fill="none" stroke="var(--accent)" stroke-width="2" stroke-linejoin="round"/>
-    <g id="sx" visibility="hidden"><line class="crosshair" y1="0" y2="${H}"/><circle r="4.5" fill="var(--accent)" stroke="var(--surface)" stroke-width="2"/></g>
+    <path d="${line}" fill="none" stroke="var(--text)" stroke-width="1.6" stroke-linejoin="round"/>
+    <g id="sx" visibility="hidden"><line class="crosshair" y1="0" y2="${H}"/><circle r="4.5" fill="var(--accent)" stroke="var(--bg)" stroke-width="2"/></g>
     <rect class="hit" x="0" y="0" width="${W}" height="${H}"/></svg>`;
   const svg = el.querySelector("svg"), sx = svg.querySelector("#sx"), tip = $("#tooltip");
   svg.querySelector(".hit").addEventListener("pointermove", (e) => {
@@ -470,6 +470,25 @@ document.addEventListener("DOMContentLoaded", () => {
     clearTimeout(rt);
     rt = setTimeout(() => { if (ui.data) { drawEquity(); drawSpark(ui.data.price?.series || []); } }, 120);
   });
+  // finom megjelenés görgetéskor (csökkentett mozgás esetén nincs)
+  const secs = document.querySelectorAll(".section");
+  if ("IntersectionObserver" in window && !matchMedia("(prefers-reduced-motion: reduce)").matches) {
+    const io = new IntersectionObserver((es) => es.forEach((e) => { if (e.isIntersecting) { e.target.classList.add("in"); io.unobserve(e.target); } }),
+      { rootMargin: "0px 0px -8% 0px" });
+    secs.forEach((s) => { s.classList.add("reveal"); io.observe(s); });
+  }
+  // a 3D érme enyhén követi az egeret
+  const stage = $("#coin-stage");
+  if (stage && !matchMedia("(prefers-reduced-motion: reduce)").matches) {
+    window.addEventListener("pointermove", (e) => {
+      const x = e.clientX / window.innerWidth - 0.5, y = e.clientY / window.innerHeight - 0.5;
+      stage.style.transform = `perspective(900px) rotateY(${(x * 10).toFixed(2)}deg) rotateX(${(-y * 8).toFixed(2)}deg)`;
+    }, { passive: true });
+  }
   load();
+  // a betűtípusok betöltése után a méretek változhatnak → grafikonok újrarajzolása
+  if (document.fonts && document.fonts.ready) {
+    document.fonts.ready.then(() => { if (ui.data) { drawEquity(); drawSpark(ui.data.price?.series || []); } });
+  }
   setInterval(() => { if (ui.source === "live") load(); }, REFRESH_MS);
 });
