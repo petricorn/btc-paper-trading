@@ -94,6 +94,7 @@ function render() {
   $("#config-hash").textContent = `Config verzió: ${d.config_hash}`;
 
   renderPrice(d);
+  renderBalance(d);
   renderHealth(d);
   renderRank(d);
   renderLegend(d);
@@ -114,6 +115,37 @@ function renderPrice(d) {
     el.className = `chip ${tone(v)}`;
   }
   drawSpark(p.series || []);
+}
+
+/* Egyenleg: tőke − kezdőtőke. A tőke a könyvelésből jön (díjak után, nyitott pozíció aktuális áron). */
+function renderBalance(d) {
+  const start = Number(d.initial_capital) || 200;
+  const strat = d.portfolios.filter((p) => p.kind === "strategy");
+  const eq = strat.reduce((s, p) => s + p.equity, 0);
+  const base = start * strat.length;
+  const pnl = eq - base;
+  const r = base ? pnl / base : null;
+  const big = $("#bal-total");
+  big.textContent = signed(pnl);
+  big.className = `balance__big num ${tone(pnl)}`;
+  const open = strat.filter((p) => p.position).length;
+  const trades = strat.reduce((s, p) => s + (p.trades || 0), 0);
+  $("#bal-sub").innerHTML =
+    `<span class="${tone(r)}">${pct(r, 2)}</span> · most ${usd(eq)} · induló ${usd(base)} · ` +
+    `${N0.format(trades)} lezárt kötés · ${open ? open + " nyitott pozíció" : "nincs nyitott pozíció"}`;
+  const v = $("#bal-verdict");
+  v.textContent = pnl > 0 ? "▲ Pluszban" : pnl < 0 ? "▼ Mínuszban" : "Nullán";
+  v.className = `balance__verdict ${tone(pnl)}`;
+
+  $("#bal-cards").innerHTML = ORDER.map((n) => d.portfolios.find((p) => p.name === n)).filter(Boolean).map((p) => {
+    const diff = p.equity - start;
+    const bench = p.kind !== "strategy";
+    return `<div class="bal-card${bench ? " bal-card--bench" : ""}">
+      <div class="pf">${swatch(p.name)}<div><div class="pf__name">${p.name}</div><div class="pf__label">${esc(p.label)}</div></div></div>
+      <p class="bal-card__val num ${tone(diff)}">${signed(diff)}</p>
+      <p class="mono meta"><span class="${tone(p.return)}">${pct(p.return, 2)}</span> · ${usd(p.equity)}${p.position ? " · nyitott" : ""}</p>
+    </div>`;
+  }).join("");
 }
 
 function renderHealth(d) {
