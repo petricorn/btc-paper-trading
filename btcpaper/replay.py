@@ -156,8 +156,11 @@ def run_replay(cfg: Config, data: HistoricalData, start: int, end: int, seed: in
                 rep.runs_skipped_missed += 1
                 t += interval
                 continue
-            if r[0] < 0.13:
-                delay = 600 + r[1] * 2100
+            if r[0] < 0.04:
+                delay = 3700 + r[1] * 1700          # nagyon késett futás (> 1 óra): a belépésnek el kell maradnia
+                rep.runs_late += 1
+            elif r[0] < 0.14:
+                delay = 600 + r[1] * 2100           # késett futás (10–45 perc)
                 rep.runs_late += 1
         now = t + delay
         if now <= last_now:

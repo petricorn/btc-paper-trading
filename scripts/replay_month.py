@@ -44,8 +44,21 @@ def main():
     ap.add_argument("--seed", type=int, default=2026)
     ap.add_argument("--out", default="replay_out")
     ap.add_argument("--report", default="reports/phase1_replay_2026-10.md")
+    ap.add_argument("--stress", action="store_true",
+                    help="laza, CSAK TESZTRE szánt paraméterek, hogy sok trade legyen (mechanika-próba)")
     a = ap.parse_args()
     cfg = load_config(a.config)
+    if a.stress:
+        from btcpaper.config import config_from_dict
+        import copy
+        raw = copy.deepcopy(cfg.raw)
+        raw["strategies"]["P1"]["entry_lookback_days"] = 3
+        raw["strategies"]["P2"]["rsi_pullback"] = "55"
+        raw["strategies"]["P3"]["adx_max"] = "100"
+        raw["strategies"]["P3"]["bb_std"] = "1.0"
+        raw["risk"]["stop_atr_mult"] = "1.0"
+        raw["risk"]["trail_activation_r"] = "0.5"
+        cfg = config_from_dict(raw)
     data = HistoricalData.load(a.data, cfg.get("instrument.coinbase_product"))
     start, end = int(parse_iso(a.start)), int(parse_iso(a.end))
     tmp = Path(tempfile.mkdtemp(prefix="replay_"))
@@ -76,7 +89,9 @@ def main():
     c = st1.meta.counters
     runs_ok = sum(1 for r in st1.runs if r["data_ok"])
     lines = [
-        "# Fázis 1 – 1 hónap visszajátszás (valódi Coinbase adat)", "",
+        "# Fázis 1 – 1 hónap visszajátszás (valódi Coinbase adat)" + (" – STRESSZ-PRÓBA" if a.stress else ""), "",
+        *(["> Laza, csak tesztre szánt paraméterekkel (sok trade a mechanika ellenőrzéséhez). "
+           "Ez NEM a valódi stratégia és nem értékelés.", ""] if a.stress else []),
         f"- Időszak: {iso(start)} – {iso(end)} (UTC)",
         f"- Config verzió: `{cfg.hash}`  ·  véletlen mag: {a.seed}",
         f"- Adat: Coinbase BTC-USD 1m/1h/1d, letöltve a nyilvános API-ról. Az 1 perces adatban "
@@ -95,7 +110,7 @@ def main():
         f"{'✅ 0 hiba' if not problems else '❌ ' + str(len(problems)) + ' hiba'} |",
         "", "## Szimulált GitHub-körülmények", "",
         f"- Tervezett futás (5 percenként): {rep1.runs_planned}; lefutott: {rep1.runs_executed}",
-        f"- Kimaradt futás: {rep1.runs_skipped_missed}; késett futás (10–45 perc): {rep1.runs_late}; "
+        f"- Kimaradt futás: {rep1.runs_skipped_missed}; késett futás (10–45 perc, ill. 1–1,5 óra): {rep1.runs_late}; "
         f"átfedés miatt összevont: {rep1.runs_skipped_overlap}",
         f"- Szándékos adat-hibák: {dict(rep1.injected)} → döntés nélküli futás: {rep1.data_fail_runs}",
         f"- Adat-hiba miatti döntés nélküli futások (motor számlálója): {c.get('runs_data_fail', 0)} "

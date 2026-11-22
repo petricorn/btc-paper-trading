@@ -4,7 +4,7 @@ __pycache__/
 .pytest_cache/
 data/cache/
 state/
-replay_out/
+replay_out*/
 diagnostics_out/
 replay_month.log
 state_*/
