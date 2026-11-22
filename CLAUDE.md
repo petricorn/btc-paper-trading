@@ -16,7 +16,7 @@ emlékezete: a döntések, az állapot és a következő lépések. **Minden lez
 | Fázis | Állapot |
 |---|---|
 | 1 – adatréteg, diagnostics, motor, könyvelés | **KÉSZ, jóváhagyva.** Diagnostics és tesztek zöldek a GitHub futtatón; 2026. októberi visszajátszás hibátlan (`reports/phase1_replay_2026-10.md`). |
-| 2 – backteszt, stratégiaválasztás | **Kód kész, a mintán belüli számolás lefutott / fut** (`python scripts/phase2.py insample`), riport: `reports/phase2_backtest.md`. A **tartalék (holdout) még NEM futott** – lásd lent. Jóváhagyásra vár. |
+| 2 – backteszt, stratégiaválasztás | **Mintán belüli számolás KÉSZ** (2026-11-22, `reports/phase2_backtest.md`, audit 0 hiba). Eredmény: **egyik stratégia sem jobb kockázattal korrigálva** a mércéknél (alap: P1 +6,8% / DD 13%, P2 −20%, P3 −21%; B1 +482% / DD 82%, B2 +779% / DD 77%; walk-forward P1 −8%, P2 −1,5%, P3 nem kereskedett). Megfigyelések: P1 kiszállási paramétere hatástalan (a stop/trailing mindig előbb zár), a díjak elviszik a P1 nyereségét. **A tartalék (holdout) még NEM futott.** Következő: veszteség-elemzés és célzott javítások walk-forwarddal (a tulajdonos kérése: nyereség max., veszteség min.), majd jóváhagyás. |
 | 3 – éles paper futás (Telegram, napi riport, outbox, heartbeat) | Még nincs elkezdve. |
 | 4 – tanulás | Csak 3 hónap éles futás után. |
 | Extra: webes felület | Kész: `docs/`, nyilvános: https://petricorn.github.io/btc-paper-trading/ (GitHub Pages, main/docs). Élő adat híján DEMÓ-t mutat. |
@@ -69,6 +69,9 @@ py -3.12 -m venv .venv
 - GitHub CLI-hez `workflow` jogosultság kell a workflow-fájlok feltöltéséhez:
   `gh auth refresh -h github.com -s workflow`.
 - Windows-on a sima `python` parancs a Store-alias; mindig a `.venv\Scripts\python.exe`-t használd.
+
+## Automatikus felület-frissítés
+- A tulajdonos kérése: **minden új backteszt/demó eredmény automatikusan menjen fel a felületre** (`python scripts/phase2.py publish` → `docs/data/demo.json`, commit, push). Az `insample` lépés végén ez magától lefut.
 
 ## Szigorú szabályok a folytatáshoz
 - **A tartalékot (holdout) csak egyszer szabad kiértékelni**: `python scripts/phase2.py holdout`. A program
