@@ -104,13 +104,16 @@ class RunResult:
 
 def run_backtest(cfg: Config, data, start: int, end: int, label: str, params: dict, seed: int = 1,
                  delay_min: float | None = None, delay_max: float | None = None,
-                 audit_check: bool = False) -> RunResult:
+                 audit_check: bool = False, state_dir: str | None = None) -> RunResult:
     off = cfg.i("backtest.run_offset_seconds")
     first = ((start + H4 - 1) // H4) * H4          # az első 4H zárás a kezdetkor vagy utána
     state, rep = run_replay(cfg, data, first, end, seed=seed, interval=H4, scenario=False,
                             delay_min=off if delay_min is None else delay_min,
                             delay_max=off if delay_max is None else delay_max,
                             retry_after=cfg.i("backtest.retry_seconds"))
+    if state_dir:
+        from .state import save_state
+        save_state(state, state_dir)
     problems = None
     if audit_check:
         from .audit import audit

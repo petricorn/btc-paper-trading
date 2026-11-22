@@ -42,7 +42,7 @@ def _job(job):
     t0 = time.time()
     r = run_backtest(c, DATA, job["start"], job["end"], job["name"], job["params"], seed=job.get("seed", 1),
                      delay_min=job.get("delay_min"), delay_max=job.get("delay_max"),
-                     audit_check=job.get("audit", False))
+                     audit_check=job.get("audit", False), state_dir=job.get("state_dir"))
     save_result(r, path)
     return job["name"], f"{time.time() - t0:.0f} s"
 
@@ -261,6 +261,38 @@ def report(cfg, choices, start, hold, oos_start):
     print("\n".join(L[:60]))
 
 
+def publish(a, cfg):
+    """A legutóbbi backteszt (alapbeállítás, 2018–) automatikusan a felületre: docs/data/demo.json,
+    majd commit + push (a GitHub Pages pár percen belül frissül)."""
+    import subprocess
+    from btcpaper.dashboard import write_dashboard
+    from btcpaper.state import load_state
+    start, hold = ts(cfg.get("backtest.data_start")), ts(cfg.get("backtest.holdout_start"))
+    sdir = RESULTS / "default_full_state"
+    if not (sdir / "portfolios.json").exists():
+        run_jobs([{"name": "default_full_state", "config": a.config, "params": {}, "kill_switch": True,
+                   "start": start, "end": hold, "state_dir": str(sdir)}], a.data, 1)
+    st = load_state(sdir)
+    note = (f"DEMÓ: backteszt valódi Coinbase-adaton, {iso(start)[:10]} – {iso(hold)[:10]}, a specifikáció "
+            "alapbeállításaival, díjakkal és csúszással (ugyanaz a motor, mint élőben). Nem az élő bot.")
+    out = Path("docs/data/demo.json")
+    write_dashboard(st, cfg, out, "demo", note)
+    print(f"Felület adatfájl frissítve: {out}", flush=True)
+    if a.no_push:
+        return
+    subprocess.run(["git", "add", str(out)], check=True)
+    if subprocess.run(["git", "diff", "--cached", "--quiet"]).returncode == 0:
+        print("Nincs változás a felületen.", flush=True)
+        return
+    subprocess.run(["git", "commit", "-q", "-m",
+                    "Dashboard demo: latest backtest results (auto)
+
+Co-Authored-By: Claude Opus 5.5 <noreply@anthropic.com>"],
+                   check=True)
+    r = subprocess.run(["git", "push", "-q"])
+    print("Feltöltve a GitHubra." if r.returncode == 0 else "A feltöltés NEM sikerült (git push).", flush=True)
+
+
 def holdout(a, cfg):
     if HOLDOUT_LOCK.exists():
         raise SystemExit(f"A tartalék már ki lett értékelve ({HOLDOUT_LOCK.read_text(encoding='utf-8').strip()}). "
@@ -301,7 +333,8 @@ def holdout(a, cfg):
 
 def main():
     ap = argparse.ArgumentParser()
-    ap.add_argument("stage", choices=["insample", "holdout", "report"])
+    ap.add_argument("stage", choices=["insample", "holdout", "report", "publish"])
+    ap.add_argument("--no-push", action="store_true", help="a felület adatát nem tölti fel a GitHubra")
     ap.add_argument("--config", default="config.yaml")
     ap.add_argument("--data", default="data/full")
     ap.add_argument("--workers", type=int, default=max(1, (os.cpu_count() or 2) - 1))
@@ -314,6 +347,7 @@ def main():
     load_full(a.data)                       # tömör tár építése egyszer, a párhuzamos munkák előtt
     if a.stage == "insample":
         insample(a, cfg)
+        publish(a, cfg)                     # az eredmény automatikusan a felületre kerül
     elif a.stage == "report":
         ch = json.loads((RESULTS / "choices.json").read_text(encoding="utf-8"))
         choices = {s: [Choice(c["window"], tuple(c["train"]), tuple(c["test"]), c["params"], c["train_sharpe"],
@@ -321,6 +355,8 @@ def main():
                    for s, v in ch.items()}
         start, hold = ts(cfg.get("backtest.data_start")), ts(cfg.get("backtest.holdout_start"))
         report(cfg, choices, start, hold, wf_windows(cfg)[0][1][0])
+    elif a.stage == "publish":
+        publish(a, cfg)
     else:
         holdout(a, cfg)
 
