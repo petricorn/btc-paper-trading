@@ -1,0 +1,10 @@
+.venv/
+__pycache__/
+*.pyc
+.pytest_cache/
+data/cache/
+state/
+replay_out/
+diagnostics_out/
+replay_month.log
+state_*/

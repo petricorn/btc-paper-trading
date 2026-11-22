@@ -1,0 +1,39 @@
+# Diagnostics: a GitHub futtatóról teszteli az összes adatforrás végpontját.
+# Kézzel indítható (Actions fül → diagnostics → Run workflow), és lefut, ha az adatréteg kódja változik.
+name: diagnostics
+
+on:
+  workflow_dispatch:
+  push:
+    branches: [main]
+    paths:
+      - "btcpaper/diagnostics.py"
+      - "btcpaper/sources.py"
+      - "btcpaper/http_client.py"
+      - ".github/workflows/diagnostics.yml"
+
+permissions:
+  contents: read
+
+concurrency:
+  group: diagnostics
+  cancel-in-progress: false
+
+jobs:
+  diagnostics:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v7
+      - uses: actions/setup-python@v7
+        with:
+          python-version: "3.12"
+          cache: pip
+      - run: pip install -r requirements.txt
+      - name: Végpontok tesztje
+        run: python -m btcpaper.diagnostics --out diagnostics_out
+      - uses: actions/upload-artifact@v7
+        if: always()
+        with:
+          name: diagnostics
+          path: diagnostics_out/
