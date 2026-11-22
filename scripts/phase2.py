@@ -285,9 +285,7 @@ def publish(a, cfg):
         print("Nincs változás a felületen.", flush=True)
         return
     subprocess.run(["git", "commit", "-q", "-m",
-                    "Dashboard demo: latest backtest results (auto)
-
-Co-Authored-By: Claude Opus 5.5 <noreply@anthropic.com>"],
+                    "Dashboard demo: latest backtest results (auto)" + chr(10) * 2 + "Co-Authored-By: Claude Opus 5.5 <noreply@anthropic.com>"],
                    check=True)
     r = subprocess.run(["git", "push", "-q"])
     print("Feltöltve a GitHubra." if r.returncode == 0 else "A feltöltés NEM sikerült (git push).", flush=True)
