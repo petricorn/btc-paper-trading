@@ -1,0 +1,47 @@
+# Fázis 2 tartalék-futtatás a GitHub gépein (ha a saját gép nincs bekapcsolva).
+# Indítás: Actions fül → phase2-backtest → Run workflow. Az eredmény letölthető "artifact"-ként.
+# A tartalék (utolsó 6 hónap) kiértékelését ez a workflow NEM futtatja.
+name: phase2-backtest
+
+on:
+  workflow_dispatch:
+    inputs:
+      data_end:
+        description: "Adat vége (UTC dátum, pl. 2026-11-22)"
+        required: true
+        default: "2026-11-22"
+
+permissions:
+  contents: read
+
+concurrency:
+  group: phase2-backtest
+  cancel-in-progress: false
+
+jobs:
+  backtest:
+    runs-on: ubuntu-latest
+    timeout-minutes: 350
+    steps:
+      - uses: actions/checkout@v7
+      - uses: actions/setup-python@v7
+        with:
+          python-version: "3.12"
+          cache: pip
+      - run: pip install -r requirements.txt
+      - name: Adat gyorsítótár
+        uses: actions/cache@v6
+        with:
+          path: data/full
+          key: coinbase-full-${{ inputs.data_end }}
+      - name: Adat letöltése (folytatható)
+        run: python scripts/download_full.py --start 2018-01-01 --warmup-start 2017-03-01 --end ${{ inputs.data_end }}
+      - name: Backteszt (mintán belül)
+        run: python scripts/phase2.py insample --workers 4
+      - uses: actions/upload-artifact@v7
+        if: always()
+        with:
+          name: phase2-results
+          path: |
+            reports/phase2_backtest.md
+            results/phase2/

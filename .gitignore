@@ -8,3 +8,6 @@ replay_out*/
 diagnostics_out/
 replay_month.log
 state_*/
+data/full/
+results/
+download_full.log

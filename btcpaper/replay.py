@@ -59,6 +59,9 @@ class Series:
         j = bisect.bisect_right(self.starts, end)
         return self.candles[i:j]
 
+    def get(self, t: int) -> Candle | None:
+        return self.by_start.get(t)
+
 
 @dataclass
 class HistoricalData:
@@ -96,7 +99,7 @@ class ReplayProvider:
 
     def _price_now(self) -> tuple[Decimal, float]:
         m = int(self.now) // MIN * MIN
-        c = self.data.m1.by_start.get(m)
+        c = self.data.m1.get(m)
         if c is None:
             raise DataError(f"nincs 1 perces gyertya a futás percére ({m})")
         return c.open, float(m)
@@ -130,16 +133,22 @@ class ReplayReport:
     injected: dict = field(default_factory=dict)
     roundtrips: int = 0
     data_fail_runs: int = 0
+    retry_runs: int = 0
 
 
 def run_replay(cfg: Config, data: HistoricalData, start: int, end: int, seed: int = 1, interval: int = 300,
                scenario: bool = True, roundtrip_every: int = 0, workdir: str | None = None,
-               progress=None) -> tuple[State, ReplayReport]:
+               progress=None, delay_min: float = 3, delay_max: float = 120, retry_after: int = 0,
+               engine: Engine | None = None) -> tuple[State, ReplayReport]:
     """Szimulált cron futások [start, end) között. `scenario=True` esetén késések, kimaradt futások,
-    dupla futások, sikertelen mentések és adat-hibák is előfordulnak (rögzített véletlen maggal)."""
+    dupla futások, sikertelen mentések és adat-hibák is előfordulnak (rögzített véletlen maggal).
+
+    `delay_min`/`delay_max`: a futás késése a tervezett időponthoz képest (mp).
+    `retry_after`: ha egy futásban adat-hiba miatt nem volt döntés, ennyi mp múlva újra próbál
+    (mint az élő 5 perces cron), a következő tervezett futásig."""
     rng = random.Random(seed)
     state = new_state(cfg, start)
-    engine = Engine(cfg)
+    engine = engine or Engine(cfg)
     rep = ReplayReport()
     last_now = 0.0
     tmp = None
@@ -150,7 +159,7 @@ def run_replay(cfg: Config, data: HistoricalData, start: int, end: int, seed: in
     while t < end:
         rep.runs_planned += 1
         r = [rng.random() for _ in range(6)]   # mindig ugyanannyi húzás → determinisztikus forgatókönyv
-        delay = 3 + r[1] * 117
+        delay = delay_min + r[1] * (delay_max - delay_min)
         if scenario:
             if r[0] < 0.03:
                 rep.runs_skipped_missed += 1
@@ -191,6 +200,16 @@ def run_replay(cfg: Config, data: HistoricalData, start: int, end: int, seed: in
             res = engine.run(state, snap)
             if not res.get("skipped") and not res["data_ok"]:
                 rep.data_fail_runs += 1
+                retry = now + retry_after
+                while retry_after and retry < t + interval:
+                    snap = build_from_provider(cfg, ReplayProvider(data, retry, None), retry,
+                                               f"{run_id}-r{int(retry)}", state.meta.m1_cursor)
+                    rr = engine.run(state, snap)
+                    rep.retry_runs += 1
+                    now = retry
+                    if rr.get("skipped") or rr["data_ok"]:
+                        break
+                    retry += retry_after
             if scenario and r[4] < 0.02:
                 rep.duplicate_runs += 1
                 again = engine.run(state, snap)     # ugyanaz a futás még egyszer

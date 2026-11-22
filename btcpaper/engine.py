@@ -213,7 +213,7 @@ class Engine:
         if equity > p.peak_equity:
             p.peak_equity = equity
         dd_lim = cfg.d("risk.kill_switch_drawdown")
-        if equity <= p.peak_equity * (1 - dd_lim):
+        if cfg.get("risk.kill_switch_enabled") and equity <= p.peak_equity * (1 - dd_lim):
             if p.position is not None and cfg.get("risk.kill_switch_liquidate"):
                 self._close(state, p, q8_down(q.bid * (1 - self.slip)), self._now, "kill_switch",
                             {"bid": q.bid, "equity": q8_down(equity), "peak": q8_down(p.peak_equity)})

@@ -25,6 +25,7 @@ risk:
   partial_take_r: "2.0"            # részleges zárás 2R-nél
   partial_take_fraction: "0.5"     # a pozíció 50%-a
   cooldown_bars_4h: 1              # kiszállás után 1 db 4H gyertya cooldown
+  kill_switch_enabled: true        # kill switch be (a Fázis 2 hangoló futásaiban kikapcsolva, lásd backtest)
   kill_switch_drawdown: "0.20"     # saját csúcs alatt 20% → a portfólió megáll
   kill_switch_liquidate: true      # megálláskor a nyitott pozíciót piaci áron zárja
   max_signal_age_seconds: 3600     # a jelzés után 1 órával már nincs belépés
@@ -77,3 +78,30 @@ http:
   user_agent: "btc-paper-trading/0.1 (paper trading simulation)"
 
 timezone_display: Europe/Budapest
+
+# ---------------------------------------------------------------- Fázis 2: backteszt
+backtest:
+  data_start: "2018-01-01"         # a mintán belüli időszak kezdete (1 perces adat)
+  holdout_start: "2026-05-22"      # az utolsó 6 hónap: érintetlen tartalék, csak a végén, egyszer
+  holdout_end: "2026-11-22"
+  run_offset_seconds: 120          # szimulált futás minden 4H zárás után 2 perccel
+  retry_seconds: 300               # adat-hiba esetén 5 perc múlva újra (mint az élő cron)
+  robustness_delay_max_seconds: 3300   # robusztussági próba: véletlen 0–55 perc késés
+  train_months: 24                 # walk-forward: 24 hónap tanítás ...
+  test_months: 6                   # ... után 6 hónap teszt, 6 havonta lépve
+  min_trades: 6                    # legalább ennyi lezárt kötés a tanító ablakban
+  plateau_ratio: "0.8"             # a szomszéd paraméterek átlag Sharpe-ja >= a választott 80%-a
+  monte_carlo_runs: 10000
+  grid:                            # stratégiánként 3 hangolható paraméter
+    P1:
+      entry_lookback_days: [10, 20, 30, 55]
+      exit_lookback_days: [5, 10, 20]
+      trend_sma_days: [100, 150, 200]
+    P2:
+      trend_ema: [50, 100, 200]
+      rsi_pullback: ["30", "35", "40", "45"]
+      pullback_window: [2, 3, 5]
+    P3:
+      bb_period: [20, 30]
+      bb_std: ["1.5", "2.0", "2.5"]
+      adx_max: ["15", "20", "25"]
