@@ -226,3 +226,17 @@ def run_replay(cfg: Config, data: HistoricalData, start: int, end: int, seed: in
             progress(k, t)
         t += interval
     return state, rep
+
+
+def stress_config(cfg: Config) -> Config:
+    """Laza, CSAK TESZTRE szánt paraméterek (sok trade a mechanika próbájához). NEM éles beállítás."""
+    import copy
+    from .config import config_from_dict
+    raw = copy.deepcopy(cfg.raw)
+    raw["strategies"]["P1"]["entry_lookback_days"] = 3
+    raw["strategies"]["P2"]["rsi_pullback"] = "55"
+    raw["strategies"]["P3"]["adx_max"] = "100"
+    raw["strategies"]["P3"]["bb_std"] = "1.0"
+    raw["risk"]["stop_atr_mult"] = "1.0"
+    raw["risk"]["trail_activation_r"] = "0.5"
+    return config_from_dict(raw)

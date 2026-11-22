@@ -306,6 +306,8 @@ def main():
     ap.add_argument("--data", default="data/full")
     ap.add_argument("--workers", type=int, default=max(1, (os.cpu_count() or 2) - 1))
     a = ap.parse_args()
+    from btcpaper.awake import keep_awake
+    keep_awake()                            # amíg számol, a gép ne aludjon el
     cfg = load_config(a.config)
     RESULTS.mkdir(parents=True, exist_ok=True)
     from btcpaper.compact import load_full

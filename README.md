@@ -83,6 +83,19 @@ reports/                 riportok
 6. Egy kézi "éles" paper futás helyben (csak a `state\` mappába ment, semmit nem küld):
    `.\.venv\Scripts\python.exe -m btcpaper.live --state state`
 
+## Webes felület (docs/)
+
+Egyszerű, csak olvasó weboldal a bot követésére: BTC ár, rendszerállapot, rangsor, tőkegörbék,
+mit vár most az egyes stratégia (a belépési feltételek pipával), kötések, futások, riasztások.
+
+* Az oldal egyetlen adatfájlt olvas: élőben (Fázis 3-tól) a `bot-state` ág `state/dashboard.json`
+  fájlját, addig a `docs/data/demo.json` demót (2026. októberi visszajátszás, laza tesztparaméterekkel –
+  a fejlécben „DEMÓ” felirat jelzi).
+* Helyben megnézni: `.\.venv\Scripts\python.exe -m http.server 8766 --directory docs`, majd böngészőben
+  `http://127.0.0.1:8766`.
+* Demó adat újragenerálása: `scripts/export_dashboard.py` (leírás a fájl elején).
+* Közzététel: GitHub → Settings → Pages → Source: *Deploy from a branch*, Branch: `main`, mappa: `/docs`.
+
 ## GitHub Actions
 
 * **tests**: minden push után lefuttatja a teszteket.

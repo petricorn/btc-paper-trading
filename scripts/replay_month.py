@@ -49,16 +49,8 @@ def main():
     a = ap.parse_args()
     cfg = load_config(a.config)
     if a.stress:
-        from btcpaper.config import config_from_dict
-        import copy
-        raw = copy.deepcopy(cfg.raw)
-        raw["strategies"]["P1"]["entry_lookback_days"] = 3
-        raw["strategies"]["P2"]["rsi_pullback"] = "55"
-        raw["strategies"]["P3"]["adx_max"] = "100"
-        raw["strategies"]["P3"]["bb_std"] = "1.0"
-        raw["risk"]["stop_atr_mult"] = "1.0"
-        raw["risk"]["trail_activation_r"] = "0.5"
-        cfg = config_from_dict(raw)
+        from btcpaper.replay import stress_config
+        cfg = stress_config(cfg)
     data = HistoricalData.load(a.data, cfg.get("instrument.coinbase_product"))
     start, end = int(parse_iso(a.start)), int(parse_iso(a.end))
     tmp = Path(tempfile.mkdtemp(prefix="replay_"))
